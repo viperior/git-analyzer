@@ -9,21 +9,28 @@ def get_config_value(key):
     return config_json[key]
 
 def display_user_stats():
-    user = get_user()
+    with open('data/out.txt', 'a') as output_file:
+        dashes = '==='
+        user = get_user()
+        print('user ==== ', user)
+        write_line_to_file(dashes, output_file, True)
+        write_line_to_file(
+            'Username: ' + user['login'] + '\nPublic repos: ' + \
+            str(user['public_repos']), 
+            output_file, 
+            True
+        )
+        write_line_to_file(dashes, output_file, True)
+        repos = get_repos()
 
-    print('Username: ', user['login'], '\nPublic repos: ', \
-        user['public_repos'])
+        for repo in repos:
+            write_line_to_file(dashes, output_file, True)
+            write_line_to_file('Repo: ' + repo['name'], output_file, True)
+            write_line_to_file('Branches: ', output_file, True)
+            branches = get_branches(repo['branches_url'])
 
-    repos = get_repos()
-
-    for repo in repos:
-        print('===')
-        print('Repo: ', repo['name'])
-        print('Branches: ')
-        branches = get_branches(repo['branches_url'])
-
-        for branch in branches:
-            print('  ', branch['name'])
+            for branch in branches:
+                write_line_to_file(' ' + branch['name'], output_file, True)
 
     return 0
 
@@ -53,6 +60,12 @@ def get_repos():
 def get_user():
     username = get_config_value('username')
     return get_json(endpoint = 'users/' + username)
+
+def write_line_to_file(line_text, file, print_line_text=False):
+    if print_line_text:
+        print(line_text)
+
+    file.write(line_text + '\n')
 
 def main():
     display_user_stats()
