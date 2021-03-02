@@ -34,9 +34,7 @@ def get_branches(branches_url):
 
 @RateLimiter(max_calls=300, period=1800)
 def get_json(url=False, endpoint=False):
-    if not (url or endpoint):
-        return False
-    elif url and (not endpoint):
+    if url and (not endpoint):
         final_url = url
     elif (not url) and endpoint:
         base = 'https://api.github.com/'
