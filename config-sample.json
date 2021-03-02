@@ -1,3 +1,4 @@
 {
-    "username": "YOUR_USERNAME_HERE"
+    "username": "YOUR_USERNAME_HERE",
+    "github_access_token": "YOUR_GITHUB_ACCESS_TOKEN_HERE"
 }
