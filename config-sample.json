@@ -1,0 +1,6 @@
+{
+    "username": "YOUR_USERNAME_HERE",
+    "github_access_token": "YOUR_GITHUB_ACCESS_TOKEN_HERE",
+    "branch_search_pattern": "BRANCH_NAME_REGEX_PATTERN_HERE",
+    "max_repos_to_download": 300
+}
