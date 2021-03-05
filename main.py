@@ -1,73 +1,79 @@
+from get_config_value import get_config_value
+from github import Github
 import json
 from ratelimiter import RateLimiter
-import requests
+from time import gmtime, strftime
 
-def get_config_value(key):
-    with open('config.json', 'r') as config_file:
-        config_json = json.load(config_file)
+def get_user_repo_branches():
+    extract_json = {
+        'data_source_access_time': strftime("%Y%m%dT%H%M%SZ", gmtime()),
+        'data_source_name': 'GitHub API'
+    }
+    g = Github(get_config_value('github_access_token'))
+    user = g.get_user()
+    user_json = {
+        'login': user.login,
+        'public_repos': user.public_repos,
+        'repos': {}
+    }
+    repos = user.get_repos()
 
-    return config_json[key]
-
-def display_user_stats():
-    with open('data/out.txt', 'a') as output_file:
-        dashes = '==='
-        user = get_user()
-        print('user ==== ', user)
-        write_line_to_file(dashes, output_file, True)
-        write_line_to_file(
-            'Username: ' + user['login'] + '\nPublic repos: ' + \
-            str(user['public_repos']), 
-            output_file, 
-            True
-        )
-        write_line_to_file(dashes, output_file, True)
-        repos = get_repos()
-
-        for repo in repos:
-            write_line_to_file(dashes, output_file, True)
-            write_line_to_file('Repo: ' + repo['name'], output_file, True)
-            write_line_to_file('Branches: ', output_file, True)
-            branches = get_branches(repo['branches_url'])
+    for i, repo in enumerate(repos):
+        if i >= get_config_value('max_repos_to_download'):
+            pass
+        else:
+            repo_name = repo.name
+            repo_json = {
+                'name': repo_name,
+                'private': repo.private,
+                'forks_count': repo.forks_count,
+                'stargazers_count': repo.stargazers_count,
+                'watchers_count': repo.watchers_count,
+                'size': repo.size,
+                'open_issues_count': repo.open_issues_count,
+                'has_issues': repo.has_issues,
+                'has_projects': repo.has_projects,
+                'has_wiki': repo.has_wiki,
+                'has_downloads': repo.has_downloads,
+                'pushed_at': repo.pushed_at,
+                'created_at': repo.created_at,
+                'updated_at': repo.updated_at,
+                'branches': {}
+            }
+            branches = repo.get_branches()
 
             for branch in branches:
-                write_line_to_file(' ' + branch['name'], output_file, True)
+                branch_name = branch.name
+                branch_commit = branch.commit
+                branch_json = {
+                    'name': branch_name,
+                    'commit': {
+                        'sha': branch_commit.sha,
+                        'url': branch_commit.url
+                    },
+                    'protected': branch.protected,
+                }
+                repo_json['branches'][branch_name] = branch_json
 
-    return 0
+        user_json['repos'][repo_name] = repo_json
 
-def get_branches(branches_url):
-    branch_list_url = branches_url.replace('{/branch}', '')
-    branches = get_json(url=branch_list_url)
-    return branches
+    extract_json['data'] = user_json
 
-@RateLimiter(max_calls=300, period=1800)
-def get_json(url=False, endpoint=False):
-    if url and (not endpoint):
-        final_url = url
-    elif (not url) and endpoint:
-        base = 'https://api.github.com/'
-        final_url = base + endpoint
-    else:
-        return False
-    
-    r = requests.get(final_url)
-    return r.json()
+    with open('data/user_repo_branches.json', 'w') as output_file:
+        json.dump(extract_json, output_file, indent=4, default=str)
 
-def get_repos():
-    username = get_config_value('username')
-    repos = get_json(endpoint = 'users/' + username + '/repos')
-    return repos
+def display_rate_limit():
+    g = Github(get_config_value('github_access_token'))
+    print('Rate limit stats:\nCore limit: ', g.rate_limiting[0])
 
-def get_user():
-    username = get_config_value('username')
-    return get_json(endpoint = 'users/' + username)
-
-def write_line_to_file(line_text, file, print_line_text=False):
-    if print_line_text:
-        print(line_text)
-
-    file.write(line_text + '\n')
+def prompt_user_to_continue():
+    user_input = input('Do you wish to proceed? (y/n): ')
+    return user_input.upper() == 'Y'
 
 def main():
-    display_user_stats()
+    display_rate_limit()
+
+    if prompt_user_to_continue():
+        get_user_repo_branches()
 
 main()
