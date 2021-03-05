@@ -6,7 +6,7 @@ def main():
     with open('data/user_repo_branches.json', 'r') as input_file:
         json_data = json.load(input_file)
 
-    print('Data source access time: ', json_data['data_source_access_time'])
+    print('Data source access time:', json_data['data_source_access_time'])
 
     for repo_key in json_data['data']['repos']:
         repo = json_data['data']['repos'][repo_key]
@@ -17,7 +17,7 @@ def main():
                 branch['name'])
             
             if match:
-                print('Matching branch found in ', repo['name'], ':', 
+                print('Matching branch found in ' + repo['name'] + ': ' + \
                     branch['name'])
 
 main()
