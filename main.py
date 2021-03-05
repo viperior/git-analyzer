@@ -17,45 +17,47 @@ def get_user_repo_branches():
         'repos': {}
     }
     repos = user.get_repos()
+    rate_limiter = RateLimiter(max_calls=5000, period=3600)
 
     for i, repo in enumerate(repos):
-        if i >= get_config_value('max_repos_to_download'):
-            pass
-        else:
-            repo_name = repo.name
-            repo_json = {
-                'name': repo_name,
-                'private': repo.private,
-                'forks_count': repo.forks_count,
-                'stargazers_count': repo.stargazers_count,
-                'watchers_count': repo.watchers_count,
-                'size': repo.size,
-                'open_issues_count': repo.open_issues_count,
-                'has_issues': repo.has_issues,
-                'has_projects': repo.has_projects,
-                'has_wiki': repo.has_wiki,
-                'has_downloads': repo.has_downloads,
-                'pushed_at': repo.pushed_at,
-                'created_at': repo.created_at,
-                'updated_at': repo.updated_at,
-                'branches': {}
-            }
-            branches = repo.get_branches()
-
-            for branch in branches:
-                branch_name = branch.name
-                branch_commit = branch.commit
-                branch_json = {
-                    'name': branch_name,
-                    'commit': {
-                        'sha': branch_commit.sha,
-                        'url': branch_commit.url
-                    },
-                    'protected': branch.protected,
+        with rate_limiter:
+            if i >= get_config_value('max_repos_to_download'):
+                pass
+            else:
+                repo_name = repo.name
+                repo_json = {
+                    'name': repo_name,
+                    'private': repo.private,
+                    'forks_count': repo.forks_count,
+                    'stargazers_count': repo.stargazers_count,
+                    'watchers_count': repo.watchers_count,
+                    'size': repo.size,
+                    'open_issues_count': repo.open_issues_count,
+                    'has_issues': repo.has_issues,
+                    'has_projects': repo.has_projects,
+                    'has_wiki': repo.has_wiki,
+                    'has_downloads': repo.has_downloads,
+                    'pushed_at': repo.pushed_at,
+                    'created_at': repo.created_at,
+                    'updated_at': repo.updated_at,
+                    'branches': {}
                 }
-                repo_json['branches'][branch_name] = branch_json
+                branches = repo.get_branches()
 
-        user_json['repos'][repo_name] = repo_json
+                for branch in branches:
+                    branch_name = branch.name
+                    branch_commit = branch.commit
+                    branch_json = {
+                        'name': branch_name,
+                        'commit': {
+                            'sha': branch_commit.sha,
+                            'url': branch_commit.url
+                        },
+                        'protected': branch.protected,
+                    }
+                    repo_json['branches'][branch_name] = branch_json
+
+            user_json['repos'][repo_name] = repo_json
 
     extract_json['data'] = user_json
 
